@@ -1,4 +1,4 @@
-export const DB_NAME = "reader-read";
+export const DB_NAME = "redux-book";
 export const firebaseConfig = {
   projectId: process.env.PROJECTID,
   storageBucket: process.env.STORAGEBUCKET,

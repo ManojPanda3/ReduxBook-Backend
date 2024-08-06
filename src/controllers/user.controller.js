@@ -26,6 +26,8 @@ const generatorToken = async (userId) => {
 export const userRegister = asyncHandler(async (req, res) => {
   // TODO:
   // get user details and check it 
+  // check existance of other user with same username or email
+  // verify the user by email
   // get avatar file and upload it 
   // create user in db 
   // check users existance and send the data to user 

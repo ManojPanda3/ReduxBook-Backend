@@ -35,24 +35,28 @@ const UserSchema = new Schema({
     type: String,
     default: ""
   },
+  isVerified: {
+    type: Boolean,
+    default: false,
+  },
 }, {
   timeseries: true
 });
 
 // a func which run before every update of a user data and check if password is changing if yes then hash it 
-UserSchema.pre("save", async function(next) {
+UserSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
   this.password = await bcrypt.hash(this.password, 10);
   return next();
 })
 
 // a method to compare a hashed password with user given password
-UserSchema.methods.isPasswordCorrect = async function(password) {
+UserSchema.methods.isPasswordCorrect = async function (password) {
   return await bcrypt.compare(this.password, password);
 }
 
 // Generating An acess token
-UserSchema.methods.generateAcessToken = function() {
+UserSchema.methods.generateAcessToken = function () {
   return jwt.sign(
     {
       _id: this._id,
@@ -68,7 +72,7 @@ UserSchema.methods.generateAcessToken = function() {
 }
 
 // Generating An refresh token
-UserSchema.methods.generateRefreshToken = function() {
+UserSchema.methods.generateRefreshToken = function () {
   return jwt.sign(
     {
       _id: this._id,
