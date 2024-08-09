@@ -20,6 +20,10 @@ app.use(cookieParser());
 
 // routes 
 import userRoutes from "./routes/user.route.js"
+import emailRoutes from "./routes/email.route.js"
+
+
 app.use('/api/v1/user', userRoutes);
+app.use('/api/v1/email', emailRoutes);
 
 export default app;

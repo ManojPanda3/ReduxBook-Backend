@@ -4,4 +4,3 @@ export const firebaseConfig = {
   storageBucket: process.env.STORAGEBUCKET,
   appId: process.env.APPID
 }
-

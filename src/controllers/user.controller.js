@@ -4,6 +4,7 @@ import ApiResponse from "../utils/ApiResponse.js"
 import User from "../models/user.model.js";
 import storage, { firebaseFileUpload } from "../storage/index.storage.js";
 import { ref } from "firebase/storage";
+import Auth from "../models/auth.model.js";
 
 const DirRef = {
   avatar: ref(storage, 'avatar'),
@@ -13,7 +14,7 @@ const DirRef = {
 const generatorToken = async (userId) => {
   try {
     const user = await User.findById(userId);
-    const accessToken = user.generateAcessToken();
+    const accessToken = user.generateAccessToken();
     const refreshToken = user.generateRefreshToken();
 
     user.refreshToken = refreshToken;
@@ -23,26 +24,30 @@ const generatorToken = async (userId) => {
     console.error("Something went wrong while generating tokens,\n Error: ", error);
   }
 }
-export const userRegister = asyncHandler(async (req, res) => {
-  // TODO:
-  // get user details and check it 
-  // check existance of other user with same username or email
-  // verify the user by email
-  // get avatar file and upload it 
-  // create user in db 
-  // check users existance and send the data to user 
-
-  // get the data 
-  const { username, fullname, email, password, description } = req.body;
+export const isUserExist = asyncHandler(async (req, res) => {
+  const { email, username } = req.body;
+  if (!email && !username) {
+    throw new ApiError(401, "invelid username/email");
+  }
+  const user = await User.findOne({
+    $or: [{ username }, { email }],
+  });
+  return res.status(200).json(new ApiResponse(200, { isUserExist: (user ? true : false) }))
+});
+export const createUser = asyncHandler(async (req, res) => {
+  const { username, fullname, email, password, AuthToken, description } = req.body;
 
   // checking if given data is correct or not 
-  if ([username, fullname, email, password].some((elm) => (elm?.trim() === ""))) {
+  if ([username, AuthToken, fullname, email, password].some((elm) => (elm?.trim() === ""))) {
     throw new ApiError(400, "All fields(username, fullname, email, password) are required");
   }
-  const checkUserExistance = User.findOne({
-    $or: [{ username }, { email }]
-  }) ? 1 : 0;
-  if (checkUserExistance) throw new ApiError(401, "Username/Email already registered");
+  const authId = jwt.verify(AuthToken, process.env.AUTHTOKEN_SECRET);
+  // finding the auth process 
+  const sendedOtp = await Auth.findById(authId?._id);
+
+  if (!sendedOtp) throw new ApiError(402, "Authantication timeOut")
+  if (!sendedOtp?.isVerified) throw new ApiError(401, "email not verified");
+
   // upload the avatar to localStorage 
   const avatarLocalFile = req.file.avatar[0].path;
   if (!avatarLocalFile) throw new ApiError(400, "Avatar is required");
@@ -91,11 +96,20 @@ export const userLogin = asyncHandler(async (req, res) => {
   const { accessToken, refreshToken } = await generatorToken(user?._id);
   const LoggedInUser = await User.findById(user?._id,);
 
+  const options = {
+    httpOnly: true,
+    secure: true
+  }
   // check if the user exist or not 
-  return res.status(200).json(new ApiResponse(200, {
-    userdata: LoggedInUser,
-    accessToken: accessToken,
-    refreshToken: refreshToken,
-  }, "User created successfully"));
+  return res.status(200)
+    .cookie(
+      "accessToken", accessToken, options
+    ).cookie(
+      "refreshToken", refreshToken, options
+    )
+    .json(new ApiResponse(200, {
+      userdata: LoggedInUser,
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+    }, "User created successfully"));
 });
-

@@ -34,11 +34,7 @@ const UserSchema = new Schema({
   description: {
     type: String,
     default: ""
-  },
-  isVerified: {
-    type: Boolean,
-    default: false,
-  },
+  }
 }, {
   timeseries: true
 });
@@ -55,18 +51,18 @@ UserSchema.methods.isPasswordCorrect = async function (password) {
   return await bcrypt.compare(this.password, password);
 }
 
-// Generating An acess token
-UserSchema.methods.generateAcessToken = function () {
+// Generating An access token
+UserSchema.methods.generateAccessToken = function () {
   return jwt.sign(
     {
       _id: this._id,
       email: this.email,
       username: this.username,
     },
-    process.env.ACESSTOKEN_SECRET
+    process.env.ACCESSTOKEN_SECRET
     ,
     {
-      expiresIn: process.env.ACESSTOKEN_EXPIRE,
+      expiresIn: process.env.ACCESSTOKEN_EXPIRE,
     }
   );
 }

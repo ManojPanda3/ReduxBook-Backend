@@ -1,9 +1,12 @@
 const asyncHandler = (func) => {
   return async (req, res, next) => {
     try {
-      func(req, res, next);
-    } catch (error) {
-      console.error("Something went wrong while running ", func, "\nError :", error);
+      await func(req, res, next);
+    } catch (err) {
+      res.status(err.status || 500).json({
+        success: false,
+        message: err.message
+      })
     }
   }
 }
