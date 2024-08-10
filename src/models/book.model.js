@@ -11,7 +11,7 @@ const BookSchema = new Schema({
   }],
   author: {
     type: mongoose.Types.ObjectId,
-    ref: 'User',
+    ref: 'Author',
     required: true,
   },
   coverImage: {
@@ -29,10 +29,6 @@ const BookSchema = new Schema({
   description: {
     type: String,
     default: ""
-  },
-  isPublic: {
-    type: Boolean,
-    default: true,
   },
   price: {
     type: Number,

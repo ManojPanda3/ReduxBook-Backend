@@ -112,6 +112,7 @@ export const resendOtp = asyncHandler((req, res) => {
   // extracting the authId.
   const authId = jwt.verify(AuthToken, process.env.AUTHTOKEN_SECRET)?._id;
   if (!authId) throw new ApiError(401, "Invelid AuthToken");
+
   // delete the prev auth process on resending the otp 
   Auth.deleteOne(authId);
 

@@ -1,7 +1,7 @@
 import User from "../models/user.model";
 import ApiError from "../utils/ApiError";
 
-const authMiddleWare = async (req, _, next) => {
+const authMiddleware = async (req, _, next) => {
 
   // extract the cookies from the req or header .
   const { accessToken } = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ", "");
@@ -22,4 +22,4 @@ const authMiddleWare = async (req, _, next) => {
   next();
 }
 
-export default authMiddleWare;
+export default authMiddleware;

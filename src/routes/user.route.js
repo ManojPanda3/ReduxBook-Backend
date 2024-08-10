@@ -1,6 +1,7 @@
 import { Router } from "express";
-import { isUserExist, userLogin } from "../controllers/user.controller.js"
+import { forgotPassword, isUserExist, resetTokens, userLogin } from "../controllers/user.controller.js"
 import { upload } from "../middlewares/multer.middleware.js"
+import authMiddleware from "../middlewares/auth.middleware.js";
 
 const router = Router();
 
@@ -12,4 +13,6 @@ router.route('/userLogin').post(upload.fields([
   }
 ]), userLogin);
 
+router.route('/resetTokens').post(resetTokens);
+router.route('/forgotPassword').post(authMiddleware, forgotPassword);
 export default router;

@@ -15,7 +15,7 @@
 - cookieParser 
 
 # models 
-User: {username , fullname , email , password , _id,refreshToken,avatar,description,isVerified,BoughtBook}
+User: {username , fullname , email , password , _id,refreshToken,avatar,description,BoughtBook}
 Author : {_id , userId , userAccountDetails}
 Book: {_id , name , tags , author:ObjectId(Author) , likes,totalReviews:, coverImage ,description,isPublic,price}
 
