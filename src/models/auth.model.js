@@ -19,18 +19,16 @@ const AuthSchema = new Schema({
   },
   createdAt: {
     type: Date,
+    expires: parseInt(process.env.OTP_EXPIRE, 10),
   },
-  expireAt: {
-    type: Date,
-  }
 });
-AuthSchema.pre("save", async function (next) {
+AuthSchema.pre("save", async function(next) {
   if (!this.isModified("otp")) { return next(); }
   this.otp = await bcrypt.hash(this.otp, 10);
   return next();
 });
 
-AuthSchema.methods.isOtpMatched = async function (otp) {
+AuthSchema.methods.isOtpMatched = async function(otp) {
   return await bcrypt.compare(otp, this.otp);
 }
 // creating an otp model  
