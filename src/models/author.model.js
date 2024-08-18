@@ -8,6 +8,10 @@ const AuthorSchema = new Schema({
     type: mongoose.Types.ObjectId,
     ref: "User",
   },
+  upiId: {
+    type: String,
+    required: true
+  }
 }, {
   timeseries: true
 });

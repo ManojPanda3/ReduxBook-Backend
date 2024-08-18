@@ -34,16 +34,22 @@ const generatorToken = async (userId) => {
 
 // check if a user exist or not 
 export const isUserExist = asyncHandler(async (req, res) => {
-  const { email, username } = req.body;
-  if (!email && !username) {
-    throw new ApiError(401, "invelid username/email");
+  console.log(req);
+  const { email, username, accessToken } = req.body;
+  if (accessToken) {
+    const decodedAccessToken = jwt.verify(accessToken, process.env.ACCESSTOKEN_SECRET);
+    if (!decodedAccessToken) throw new ApiError(401, "invelid accessToken");
+    const user = await User.findById(decodedAccessToken?._id);
+  } else {
+    if (!email && !username) {
+      throw new ApiError(401, "invelid username/email");
+    }
+    const user = await User.findOne({
+      $or: [{ username }, { email }],
+    });
   }
-  const user = await User.findOne({
-    $or: [{ username }, { email }],
-  });
   return res.status(200).json(new ApiResponse(200, { isUserExist: (user ? true : false) }))
 });
-
 // create a  user 
 export const createUser = asyncHandler(async (req, res) => {
   const { username, fullname, email, password, AuthToken, description } = req.body;
