@@ -12,4 +12,5 @@ To run:
 bun run index.ts
 ```
 
-This project was created using `bun init` in bun v1.1.18. [Bun](https://bun.sh) is a fast all-in-one JavaScript runtime.
+hello thisbis the backend code of REDUXBOOK repo 
+
