@@ -3,10 +3,7 @@
   "headers": [
     {
       "source":"/(.*)",
-      "headers":[{
-        "key" : "Access-Control-Allow-Credentials",
-        "value":"true"
-      },
+      "headers":[
         {
           "key" : "Access-Control-Allow-Origin",
           "value":"https://reduxbook.vercel.app/"
