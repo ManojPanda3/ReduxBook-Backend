@@ -24,6 +24,7 @@ import emailRoutes from "./routes/email.route.js"
 
 
 app.get('/api', (req, res) => { return res.send("<p>/api/v1/{user,email}/<functionality>") });
+app.get('/', (req, res) => { return res.send("Hello world") });
 app.use('/api/v1/user', userRoutes);
 app.use('/api/v1/email', emailRoutes);
 
