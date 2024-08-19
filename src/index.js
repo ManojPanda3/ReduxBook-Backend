@@ -18,3 +18,4 @@ connectDB()
       }
     }
   );
+module.exports = app;
