@@ -13,7 +13,7 @@ const generateOtp = () => {
     seed ^= seed << 5;
     return Math.abs(seed / 0x10000000);
   }
-  return Math.floor(rand(Date.now()) * 1e6);
+  return Math.floor(rand(Date.now()) * 1e5);
 }
 
 //sending otp for authentication
@@ -25,6 +25,7 @@ export const sendOtp = asyncHandler(async (req, res) => {
   // and send an success msg to user
 
   const { email, username } = req.body;
+
   if (!email) {
     throw new ApiError(401, "invelid email")
   }
@@ -56,7 +57,6 @@ export const sendOtp = asyncHandler(async (req, res) => {
     }
   )
   if (!info) throw new ApiError(500, "Something went wrong while sending email");
-  console.log("msg: ", info); // for debug 
 
   // create a authToken 
   const AuthToken = jwt.sign({

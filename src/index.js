@@ -18,4 +18,3 @@ connectDB()
       }
     }
   ).catch(err => console.error("Error while connecting to db \n Error: ", err));
-export default app;

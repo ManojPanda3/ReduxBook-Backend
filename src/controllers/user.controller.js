@@ -2,17 +2,16 @@ import asyncHandler from "../utils/asyncHandler.js"
 import ApiError from "../utils/ApiError.js"
 import ApiResponse from "../utils/ApiResponse.js"
 import User from "../models/user.model.js";
-import storage, { firebaseFileUpload } from "../storage/index.storage.js";
-import { ref } from "firebase/storage";
+import FirebaseStorage from "../storage/index.storage.js";
 import Auth from "../models/auth.model.js";
-import { decode } from "jsonwebtoken";
+import { verifyEmail } from "../email/index.js";
 
 const DirRef = {
-  avatar: ref(storage, 'avatar'),
-  book: ref(storage, 'book/doc'),
-  bookCoverimage: ref(storage, 'book/cover-image'),
+  avatar: 'avatar',
+  book: 'book/doc',
+  bookCoverimage: 'book/cover-image',
 }
-
+const Storage = new FirebaseStorage(DirRef);
 // generating auth Tokens
 const generatorToken = async (userId) => {
   try {
@@ -34,22 +33,24 @@ const generatorToken = async (userId) => {
 
 // check if a user exist or not 
 export const isUserExist = asyncHandler(async (req, res) => {
-  console.log(req);
-  const { email, username, accessToken } = req.body;
-  if (accessToken) {
-    const decodedAccessToken = jwt.verify(accessToken, process.env.ACCESSTOKEN_SECRET);
-    if (!decodedAccessToken) throw new ApiError(401, "invelid accessToken");
-    const user = await User.findById(decodedAccessToken?._id);
-  } else {
-    if (!email && !username) {
-      throw new ApiError(401, "invelid username/email");
-    }
-    const user = await User.findOne({
-      $or: [{ username }, { email }],
-    });
+  // extract username and email to check 
+  const { email, username } = req.body;
+  // check atleast 1 field is given or not 
+  if (!email && !username) {
+    throw new ApiError(401, "invelid username/email");
   }
+  // check if email present then email formate is ok or not
+  if (email && !verifyEmail(email)) throw new ApiError(401, "invelid email");
+
+  // checking user
+  const user = await User.findOne({
+    $or: [{ username }, { email }],
+  });
+
   return res.status(200).json(new ApiResponse(200, { isUserExist: (user ? true : false) }))
 });
+
+
 // create a  user 
 export const createUser = asyncHandler(async (req, res) => {
   const { username, fullname, email, password, AuthToken, description } = req.body;
@@ -70,7 +71,7 @@ export const createUser = asyncHandler(async (req, res) => {
   if (!avatarLocalFile) throw new ApiError(400, "Avatar is required");
 
   // upload the avatar to the cloud 
-  const avatar = await firebaseFileUpload(avatarLocalFile, DirRef[avatar]);
+  const avatar = await Storage.firebaseFileUpload(avatarLocalFile, "avatar");
   if (!avatar) throw new ApiError(500, "Server Error, Something went wrong while uploading avatar");
 
   //create the user 
@@ -103,7 +104,7 @@ export const userLogin = asyncHandler(async (req, res) => {
   const user = await User.findOne({
     $or: [{ email }, { username }]
   })
-  if (!user) throw new ApiError(401, "Invelid credentials");
+  if (!user) throw new ApiError(401, "user doesn't exist");
   const isPasswordCorrect = user.isPasswordCorrect(password);
   if (!isPasswordCorrect) throw new ApiError(401, "Invelid password");
 

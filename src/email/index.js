@@ -1,20 +1,21 @@
 import { createTransport } from "nodemailer"
 
-const transporter = createTransport({
-  service: 'gmail',
-  host: 'smtp.gmail.com',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  }
-});
-
 const emailSender = async function (userEmail, msg = {
   subject: "Hello ✔",
   text: "Hello world?",
   html: "<b>Hello world?</b>",
 }) {
   try {
+    const transporter = createTransport({
+      service: 'Gmail',
+      host: 'smtp.gmail.com',
+      secure: true,
+      port: process.env.EMAIL_PORT,
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      }
+    });
     // send mail with defined transport object
     const info = await transporter.sendMail({
       from: `"ReduxBook" <${process.env.EMAIL_USER}>`,
@@ -30,4 +31,9 @@ const emailSender = async function (userEmail, msg = {
   }
 }
 
+export const verifyEmail = (email) => {
+  const emailRegex = /^(([^<>()[\]\.,;:\s@\"]+(\.[^<>()[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i;
+  if (email.match(emailRegex)) return true;
+  return false;
+}
 export default emailSender;
