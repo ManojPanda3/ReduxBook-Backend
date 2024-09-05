@@ -2,16 +2,11 @@ import asyncHandler from "../utils/asyncHandler.js"
 import ApiError from "../utils/ApiError.js"
 import ApiResponse from "../utils/ApiResponse.js"
 import User from "../models/user.model.js";
-import FirebaseStorage from "../storage/index.storage.js";
 import Auth from "../models/auth.model.js";
 import { verifyEmail } from "../email/index.js";
+import jwt from "jsonwebtoken"
+import { Storage } from "../index.js"
 
-const DirRef = {
-  avatar: 'avatar',
-  book: 'book/doc',
-  bookCoverimage: 'book/cover-image',
-}
-const Storage = new FirebaseStorage(DirRef);
 // generating auth Tokens
 const generatorToken = async (userId) => {
   try {
@@ -46,7 +41,6 @@ export const isUserExist = asyncHandler(async (req, res) => {
   const user = await User.findOne({
     $or: [{ username }, { email }],
   });
-
   return res.status(200).json(new ApiResponse(200, { isUserExist: (user ? true : false) }))
 });
 
@@ -56,7 +50,10 @@ export const createUser = asyncHandler(async (req, res) => {
   const { username, fullname, email, password, AuthToken, description } = req.body;
 
   // checking if given data is correct or not 
-  if ([username, AuthToken, fullname, email, password].some((elm) => (elm?.trim() === ""))) {
+  if (
+    [username, AuthToken, fullname, email, password]
+      .some((elm) => !elm?.trim())
+  ) {
     throw new ApiError(400, "All fields(username, fullname, email, password) are required");
   }
   const authId = jwt.verify(AuthToken, process.env.AUTHTOKEN_SECRET);
@@ -66,8 +63,12 @@ export const createUser = asyncHandler(async (req, res) => {
   if (!sendedOtp) throw new ApiError(402, "Authantication timeOut")
   if (!sendedOtp?.isVerified) throw new ApiError(401, "email not verified");
 
+  const isUserExist = await User.findOne({
+    $or: [{ email }, { username }]
+  })
+  if (isUserExist) throw new ApiError(401, "user with same email/username already exist");
   // upload the avatar to localStorage 
-  const avatarLocalFile = req.file.avatar[0].path;
+  const avatarLocalFile = req.files.avatar[0].path;
   if (!avatarLocalFile) throw new ApiError(400, "Avatar is required");
 
   // upload the avatar to the cloud 
@@ -83,8 +84,19 @@ export const createUser = asyncHandler(async (req, res) => {
   const createdUser = await User.findOne(user?._id).select("-password -refreshToken");
   if (!createdUser) throw new ApiError(500, "Server Error, Something went wrong while creating account");
 
+  const { accessToken, refreshToken } = await generatorToken(user?._id);
+  const options = {
+    httpOnly: true,
+    secure: true
+  };
   // check if the user exist or not 
-  return res.status(200).json(new ApiResponse(200, createdUser, "User created successfully"));
+  return res.status(200)
+    .cookie(
+      "accessToken", accessToken, options
+    ).cookie(
+      "refreshToken", refreshToken, options
+    )
+    .json(new ApiResponse(200, createdUser, "User created successfully"));
 });
 
 // logged in a user
@@ -201,6 +213,11 @@ export const forgotPassword = asyncHandler(async (req, res) => {
   }, "Password changed successfully"))
 });
 
+export const getCurrentUser = asyncHandler(async (req, res) => {
+  return res.status(200).json(
+    new ApiResponse(200, res.user, "cuurent user fetched Successfully")
+  )
+});
 // userDetails graber ;
 export const userDetails = asyncHandler(async (req, res) => {
   // TODO: 
@@ -254,7 +271,7 @@ export const authorDetails = asyncHandler(async (req, res) => {
       },
     }
   }]).select("-password -refreshToken");
-  if (!user) throw new ApiError(401, "invelid uername/email")
+  if (!user) throw new ApiError(401, "invelid username/email")
   console.log(user);
   return res.status(200).json(
     new ApiResponse(200, user, "userDetails fetched successfully")

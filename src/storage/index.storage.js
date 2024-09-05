@@ -1,21 +1,31 @@
-import { getStorage, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+import { getStorage, uploadBytes, getDownloadURL, deleteObject, uploadBytesResumable } from "firebase/storage";
+
 import { ref } from "firebase/storage";
-import { unlinkSync } from "fs"
+import { readFileSync, unlinkSync } from "fs"
 import firebaseApp from "../firebase/index.js"
 
 class FirebaseStorage {
   constructor(dirs) {
-    this.firebaseApp = firebaseApp;
-    this.storage = getStorage(firebaseApp, "gc://" + process.env.STORAGEBUCKET);
+    this.firebaseApp = firebaseApp();
+    this.storage = getStorage();
+    this.rootRef = ref(this.storage);
     this.Ref = {
     };
-    Object.keys(dirs).forEach((key) => this.Ref[key] = ref(this.storage, dirs[key]));
+    this.metadata = {
+      contentType: 'image/jpeg'
+    };
+
+    Object.keys(dirs).forEach((key) => this.Ref[key] = ref(this.rootRef, dirs[key]));
   }
-  async firebaseFileUpload(file, ref) {
+  async firebaseFileUpload(file, Ref) {
     try {
-      const uploadedFile = await uploadBytes(file, this.Ref[ref]);
+      const fileName = file.split("/").pop();
+      console.log(fileName)
+      const fileRef = ref(this.Ref[Ref], fileName);
+      const uploadedFile = await uploadBytesResumable(fileRef, readFileSync("./public/temp/" + fileName), this.metadata);
       const uploadedFileURI = await getDownloadURL(uploadedFile.ref);
-      unlinkSync(file);
+      console.log(uploadedFileURI);
+      unlinkSync("./public/temp/" + fileName);
       return uploadedFileURI;
     } catch (error) {
       console.error("something happened while uploading file: ", file, "\nError: ", error);

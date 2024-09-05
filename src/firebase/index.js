@@ -1,4 +1,14 @@
 import { initializeApp } from "firebase/app"
-import { firebaseConfig } from "../constants/index.const.js";
-const fireBaseApp = initializeApp(firebaseConfig);
+const fireBaseApp = () => {
+  const firebaseConfig = {
+    apiKey: process.env.APIKEY,
+    authDomain: process.env.AUTHDOMAIN,
+    databaseURL: process.env.DATABASEURL,
+    projectId: process.env.PROJECTID,
+    storageBucket: process.env.STORAGEBUCKET,
+    messagingSenderId: process.env.MESSAGINGSENDERID,
+    appId: process.env.APPID,
+  }
+  return initializeApp(firebaseConfig);
+}
 export default fireBaseApp;

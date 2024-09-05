@@ -65,7 +65,7 @@ export const sendOtp = asyncHandler(async (req, res) => {
     process.env.AUTHTOKEN_SECRET
     ,
     {
-      expiresIn: 600,
+      expiresIn: process.env.OTP_EXPIRE + 300,
     })
 
   // send auth token to the user 
@@ -80,6 +80,7 @@ export const verifyOtp = asyncHandler(async (req, res) => {
   // match the otp if matched del the auth and send a success msg 
 
   const { otp, AuthToken } = req.body;
+  console.info("verifyOtp", req.body);
   if (!otp || !AuthToken) throw new ApiError(401, "all fields are required");
 
   // extracting auth id 
@@ -93,15 +94,13 @@ export const verifyOtp = asyncHandler(async (req, res) => {
 
   // check if otp matched or not 
   const isOtpMatch = await sendedOtp.isOtpMatched(otp);
-  if (!isOtpMatch) throw new ApiError(401, "Invelid otp");
-
   // verify the user 
   sendedOtp.isVerified = true;
   sendedOtp.save({ validateBeforeSave: false });
 
 
   // retur a 200 response 
-  return res.status(200).json(new ApiResponse(200, { isOtpMatch: true }, "Otp verified "))
+  return res.status(200).json(new ApiResponse(200, { isOtpMatch }, "Otp verified "))
 })
 
 export const resendOtp = asyncHandler((req, res) => {

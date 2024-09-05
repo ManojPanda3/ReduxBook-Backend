@@ -1,11 +1,12 @@
 import User from "../models/user.model.js";
 import ApiError from "../utils/ApiError.js";
+import asyncHandler from "../utils/asyncHandler.js";
 
 
-const authMiddleware = async (req, _, next) => {
+const authMiddleware = asyncHandler(async (req, _, next) => {
 
   // extract the cookies from the req or header .
-  const { accessToken } = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ", "");
+  const { accessToken } = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ", "") || "";
   if (!accessToken) throw new ApiError(401, "accessToken is required");
 
   // decode the jwt to get info inside of it 
@@ -21,6 +22,6 @@ const authMiddleware = async (req, _, next) => {
 
   // run other processes
   next();
-}
+});
 
 export default authMiddleware;
