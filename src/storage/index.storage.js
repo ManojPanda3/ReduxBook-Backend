@@ -23,9 +23,8 @@ class FirebaseStorage {
       console.log(fileName)
       const fileRef = ref(this.Ref[Ref], fileName);
       const uploadedFile = await uploadBytesResumable(fileRef, readFileSync("./public/temp/" + fileName), this.metadata);
-      const uploadedFileURI = await getDownloadURL(uploadedFile.ref);
-      console.log(uploadedFileURI);
       unlinkSync("./public/temp/" + fileName);
+      const uploadedFileURI = await getDownloadURL(uploadedFile.ref);
       return uploadedFileURI;
     } catch (error) {
       console.error("something happened while uploading file: ", file, "\nError: ", error);

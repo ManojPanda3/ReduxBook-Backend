@@ -16,7 +16,6 @@ const emailSender = async function (userEmail, msg = {
         pass: process.env.EMAIL_PASS,
       }
     });
-    console.log(transporter);
     // send mail with defined transport object
     const info = await transporter.sendMail({
       from: `"ReduxBook" <${process.env.EMAIL_USER}>`,

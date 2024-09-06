@@ -117,7 +117,7 @@ export const userLogin = asyncHandler(async (req, res) => {
     $or: [{ email }, { username }]
   })
   if (!user) throw new ApiError(401, "user doesn't exist");
-  const isPasswordCorrect = user.isPasswordCorrect(password);
+  const isPasswordCorrect = await user.isPasswordCorrect(password);
   if (!isPasswordCorrect) throw new ApiError(401, "Invelid password");
 
   // check the user 
@@ -135,7 +135,8 @@ export const userLogin = asyncHandler(async (req, res) => {
   return res.status(200)
     .cookie(
       "accessToken", accessToken, options
-    ).cookie(
+    )
+    .cookie(
       "refreshToken", refreshToken, options
     )
     .json(new ApiResponse(200, {
@@ -145,6 +146,20 @@ export const userLogin = asyncHandler(async (req, res) => {
     }, "User created successfully"));
 });
 
+export const userLogout = asyncHandler(async (req, res) => {
+  const user = req.user;
+  user.refreshToken = undefined;
+  user.save({ validateBeforeSave: false });
+  const options = {
+    // httpOnly: true,
+    // secure: true
+  }
+  return res
+    .status(200)
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken", options)
+    .json(new ApiResponse(200, {}, "User logged Out"))
+});
 // to reset the refresh and acess token
 export const resetTokens = asyncHandler(async (req, res) => {
   // TODO:
@@ -209,13 +224,12 @@ export const forgotPassword = asyncHandler(async (req, res) => {
   await user.save({ validateBeforeSave: false });
 
   return res.status(200).json(new ApiResponse(200, {
-
   }, "Password changed successfully"))
 });
 
 export const getCurrentUser = asyncHandler(async (req, res) => {
   return res.status(200).json(
-    new ApiResponse(200, res.user, "cuurent user fetched Successfully")
+    new ApiResponse(200, req.user, "current user fetched Successfully")
   )
 });
 // userDetails graber ;

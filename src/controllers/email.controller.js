@@ -56,6 +56,7 @@ export const sendOtp = asyncHandler(async (req, res) => {
       "html": `<html>\n<head>\n<title>Verify Your Account</title>\n</head>\n<body>\n<h1>Welcome to ReaduxBook!</h1>\n<p>Hi [${username ? username : "User"}],</p>\n<p>To complete your registration, please verify your account by entering the following OTP code:</p>\n<p><strong>${genOtp}</strong></p>\n<p>This code is valid for 10 minutes. If you did not request to verify your account, please ignore this email.</p>\n<p>Thanks,</p>\n<p>[ReaduxBook]</p>\n</body>\n</html>`
     }
   )
+  console.info("[Debuging-emailsendingOutput]", info);
   if (!info) throw new ApiError(500, "Something went wrong while sending email");
 
   // create a authToken 
@@ -95,9 +96,10 @@ export const verifyOtp = asyncHandler(async (req, res) => {
   // check if otp matched or not 
   const isOtpMatch = await sendedOtp.isOtpMatched(otp);
   // verify the user 
-  sendedOtp.isVerified = true;
-  sendedOtp.save({ validateBeforeSave: false });
-
+  if (isOtpMatch) {
+    sendedOtp.isVerified = true;
+    sendedOtp.save({ validateBeforeSave: false });
+  }
 
   // retur a 200 response 
   return res.status(200).json(new ApiResponse(200, { isOtpMatch }, "Otp verified "))

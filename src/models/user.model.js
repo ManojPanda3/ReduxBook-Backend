@@ -46,13 +46,14 @@ const UserSchema = new Schema({
 // a func which run before every update of a user data and check if password is changing if yes then hash it 
 UserSchema.pre("save", async function(next) {
   if (!this.isModified("password")) return next();
+  console.info(this.password);
   this.password = await bcrypt.hash(this.password, 10);
   return next();
 })
 
 // a method to compare a hashed password with user given password
 UserSchema.methods.isPasswordCorrect = async function(password) {
-  return await bcrypt.compare(this.password, password);
+  return await bcrypt.compare(password, this.password);
 }
 
 // Generating An access token
@@ -66,7 +67,7 @@ UserSchema.methods.generateAccessToken = function() {
     process.env.ACCESSTOKEN_SECRET
     ,
     {
-      expiresIn: process.env.ACCESSTOKEN_EXPIRE,
+      expiresIn: process.env.ACCESSTOKEN_EXPIRE * 1000,
     }
   );
 }
@@ -79,7 +80,7 @@ UserSchema.methods.generateRefreshToken = function() {
     },
     process.env.REFRESHTOKEN_SECRET,
     {
-      expiresIn: process.env.REFRESHTOKEN_EXPIRE,
+      expiresIn: process.env.REFRESHTOKEN_EXPIRE * 1000,
     }
   );
 }
