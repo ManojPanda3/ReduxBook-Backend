@@ -1,30 +1,37 @@
 import mongoose, { Schema } from "mongoose";
 
 const BookSchema = new Schema({
-  name: {
+  title: {
     type: String,
     required: true,
-    index: true
+    index: true,
+    unique: true,
   },
   tags: [{
-    type: String,
+    type: mongoose.Types.ObjectId,
+    ref: "Tag",
   }],
   author: {
     type: mongoose.Types.ObjectId,
-    ref: 'Author',
+    ref: 'Uesr',
+    required: true,
+  },
+  file: {
+    type: String,
     required: true,
   },
   coverImage: {
     type: String,
     required: true,
   },
-  likes: {
-    type: Number,
-    default: 0,
-  },
-  totalReviews: {
+  ranking: {
     types: Number,
-    default: 0
+  },
+  numOfSales: {
+    types: Number,
+  },
+  avgRating: {
+    types: Number,
   },
   description: {
     type: String,
@@ -34,9 +41,19 @@ const BookSchema = new Schema({
     type: Number,
     default: 0,
   },
+  totalReviews: {
+    type: Number,
+    default: 0,
+  },
 }, {
   timeseries: true
 });
 
+BookSchema.pre("save", async function(next) {
+  if (this.isModified(this.tags)) {
+    this.tags = [...new Set(this.tags)]
+  }
+  return next();
+});
 const Book = mongoose.model('Book', BookSchema);
 export default Book;

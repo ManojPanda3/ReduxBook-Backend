@@ -12,7 +12,7 @@ const authMiddleware = asyncHandler(async (req, _, next) => {
   if (!decodedAccessToken) throw new ApiError(401, "invelid accessToken");
 
   // fing the user 
-  const user = await User.findById(decodedAccessToken?._id).select("-password -refreshToken -__v");
+  const user = await User.findById(decodedAccessToken?._id).select("-password -refreshToken -__v -paymentDetails");
   if (!user) throw new ApiError(401, "User does't exist");
 
   // save the user

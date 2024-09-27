@@ -39,15 +39,25 @@ const UserSchema = new Schema({
     type: mongoose.Types.ObjectId,
     ref: "Book"
   }],
+  intrestedTags: [{
+    type: mongoose.Types.ObjectId,
+    ref: "Book"
+  }],
+  paymentDetails: {
+    type: String
+  }
 }, {
   timeseries: true
 });
 
 // a func which run before every update of a user data and check if password is changing if yes then hash it 
 UserSchema.pre("save", async function(next) {
-  if (!this.isModified("password")) return next();
-  console.info(this.password);
-  this.password = await bcrypt.hash(this.password, 10);
+  if (this.isModified(this.intrestedTags)) {
+    this.intrestedTags = [...new Set(this.intrestedTags)]
+  }
+  if (this.isModified("password")) {
+    this.password = await bcrypt.hash(this.password, 10);
+  }
   return next();
 })
 

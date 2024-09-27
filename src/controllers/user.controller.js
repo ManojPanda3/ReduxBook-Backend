@@ -44,7 +44,6 @@ export const isUserExist = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, { isUserExist: (user ? true : false) }))
 });
 
-
 // create a  user 
 export const createUser = asyncHandler(async (req, res) => {
   const { username, fullname, email, password, AuthToken, description } = req.body;
@@ -77,11 +76,11 @@ export const createUser = asyncHandler(async (req, res) => {
 
   //create the user 
   const user = await User.create({
-    username: username.trim().toLowerCase(), fullname, email, password, description, avatar
+    username: username, fullname, email, password, description, avatar
   });
 
   // check the user 
-  const createdUser = await User.findOne(user?._id).select("-password -refreshToken");
+  const createdUser = await User.findOne(user?._id).select("-password -refreshToken -paymentDetails");
   if (!createdUser) throw new ApiError(500, "Server Error, Something went wrong while creating account");
 
   const { accessToken, refreshToken } = await generatorToken(user?._id);
@@ -125,7 +124,7 @@ export const userLogin = asyncHandler(async (req, res) => {
   if (!createdUser) throw new ApiError(500, "Server Error, Something went wrong while creating account");
 
   const { accessToken, refreshToken } = await generatorToken(user?._id);
-  const LoggedInUser = await User.findById(user?._id,).select("-password -refreshToken");
+  const LoggedInUser = await User.findById(user?._id,).select("-password -refreshToken -paymentDetails");
 
   const options = {
     httpOnly: true,
@@ -146,13 +145,14 @@ export const userLogin = asyncHandler(async (req, res) => {
     }, "User created successfully"));
 });
 
+// logout the user 
 export const userLogout = asyncHandler(async (req, res) => {
   const user = req.user;
   user.refreshToken = undefined;
   user.save({ validateBeforeSave: false });
   const options = {
-    // httpOnly: true,
-    // secure: true
+    httpOnly: true,
+    secure: true
   }
   return res
     .status(200)
@@ -160,6 +160,7 @@ export const userLogout = asyncHandler(async (req, res) => {
     .clearCookie("refreshToken", options)
     .json(new ApiResponse(200, {}, "User logged Out"))
 });
+
 // to reset the refresh and acess token
 export const resetTokens = asyncHandler(async (req, res) => {
   // TODO:
@@ -185,7 +186,7 @@ export const resetTokens = asyncHandler(async (req, res) => {
   // generating tokens and saving it in the db
   const { accessToken, refreshToken } = await generatorToken(user?._id);
 
-  const LoggedInUser = await User.findById(user?._id,).select("-password -refreshToken");
+  const LoggedInUser = await User.findById(user?._id,).select("-password -refreshToken -paymentDetails");
 
   const options = {
     httpOnly: true,
@@ -219,7 +220,7 @@ export const forgotPassword = asyncHandler(async (req, res) => {
   const { oldPassword, newPassword } = req.body;
   if (!oldPassword || !newPassword) throw new ApiError(401, "All fields are required");
   const user = req.user;
-  if (!user.isPasswordCorrect(onChildAdded)) throw new ApiError(401, "Invalid oldPassword. Please try again.");
+  if (!user.isPasswordCorrect(oldPassword)) throw new ApiError(401, "Invalid oldPassword. Please try again.");
   user.password = newPassword;
   await user.save({ validateBeforeSave: false });
 
@@ -227,11 +228,13 @@ export const forgotPassword = asyncHandler(async (req, res) => {
   }, "Password changed successfully"))
 });
 
+// get current user details 
 export const getCurrentUser = asyncHandler(async (req, res) => {
   return res.status(200).json(
     new ApiResponse(200, req.user, "current user fetched Successfully")
   )
 });
+
 // userDetails graber ;
 export const userDetails = asyncHandler(async (req, res) => {
   // TODO: 
@@ -239,18 +242,44 @@ export const userDetails = asyncHandler(async (req, res) => {
   // delete unnesesery datas using a aggregation pipeline and select ;
   // send the data 
   const { username, email } = req.body;
+
   if (!username && !email) throw new ApiError(401, "All fields are required")
-  const user = await User.findOne({
-    $or: [{ username }, { email }],
-  }).select("-password -refreshToken");
+
+  const user = await User.aggregation([
+    {
+      $match: {
+        $or: [{ username }, { email }],
+      }
+    },
+    {
+      $lookup: {
+        from: "books",
+        localField: "_id",
+        foreignField: "useres",
+        as: "publishedBooks",
+        pipeline: [{
+          $unset: ["file"],
+        },
+        {
+          $limit: 10
+        }
+        ]
+      }
+    },
+    {
+      $unset: ["password", "refreshToken", "paymentDetails"]
+    }
+  ]);
+
   if (!user) throw new ApiError(401, "invelid uername/email")
+
   return res.status(200).json(
     new ApiResponse(200, user, "userDetails fetched successfully")
   );
 })
 
 // get Author Details ;
-export const authorDetails = asyncHandler(async (req, res) => {
+export const userPublishedBooks = asyncHandler(async (req, res) => {
   // TODO: 
   // get user datas ;
   // delete unnesesery datas using a aggregation pipeline and select ;
@@ -259,34 +288,46 @@ export const authorDetails = asyncHandler(async (req, res) => {
   if (!username) throw new ApiError(401, "All fields are required")
   const user = await User.aggregate([{
     $match: {
-      username: username?.trim().toLowerCase(),
+      username: username,
     }
   }, {
     $lookup: {
       from: "books",
       localField: "_id",
-      foreignField: "author",
+      foreignField: "useres",
       as: "publishedBooks",
       pipeline: [{
         $project: {
-          name: 1,
-          coverImage: 1,
-          likes: 1,
-          totalReviews: 1,
+          title: 1,
           tags: 1,
+          author: 1,
+          coverImages: 1,
+          avgRating: 1,
+          ranking: 1,
           price: 1,
+          totalReviews: 1
         }
       },]
     }
-  }, {
+  },
+  {
+    $unset: ["password", "refreshToken", "paymentDetails"]
+  },
+  {
     $addFields: {
       totalPublishedBook: {
         $size: "$publishedBooks",
       },
     }
-  }]).select("-password -refreshToken");
+  },
+  {
+    $project: {
+      publishedBooks: 1
+    }
+  }
+  ]);
   if (!user) throw new ApiError(401, "invelid username/email")
-  console.log(user);
+  console.info(user);
   return res.status(200).json(
     new ApiResponse(200, user, "userDetails fetched successfully")
   );

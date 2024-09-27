@@ -29,8 +29,13 @@ app.use(cookieParser());
 // routes 
 import userRoutes from "./routes/user.route.js";
 import emailRoutes from "./routes/email.route.js";
-app.get('/api', (req, res) => { return res.send("<p>/api/v1/{user,email}/</p>") });
+import bookRoutes from "./routes/book.route.js";
+import tagRoutes from "./routes/tag.route.js";
+
+app.get('/api', (req, res) => { return res.send("<p>/api/v1/{user,email,book}/</p>") });
 app.use('/api/v1/user', userRoutes);
 app.use('/api/v1/email', emailRoutes);
+app.use('/api/v1/book', bookRoutes);
+app.use('/api/v1/tag', tagRoutes);
 
 export default app;
