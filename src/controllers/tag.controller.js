@@ -29,3 +29,15 @@ export const getTag = asyncHandler(async (req, res) => {
     new ApiResponse(200, tag, "Successfully tags created")
   )
 }); 
+
+export const handleTagChange = asyncHandler(async (req, res) => {
+  const { name } = req.body;
+  if (!name?.trim().toLowerCase()) throw new ApiError(400, "tag name is required");
+
+  const tag = await Tags.find({name:{$regex:name}});
+  if (!tag) throw new ApiError(404, "tag not found");
+
+  return res.status(200).json(
+    new ApiResponse(200, tag, "Successfully tags created")
+  );
+}); 
